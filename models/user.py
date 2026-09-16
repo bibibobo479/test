@@ -29,6 +29,16 @@ class User(Base):
         String(20)
     )
 
+    # ==========================================
+    # Relationships
+    # ==========================================
+
+    # Группы преподавателя
+    groups = relationship(
+        "Group",
+        back_populates="teacher"
+    )
+
     # Группы, в которых состоит студент
     group_memberships = relationship(
         "GroupMember",
@@ -41,7 +51,7 @@ class User(Base):
         back_populates="teacher"
     )
 
-    # Задания преподавателя
+    # Задания, созданные преподавателем
     created_tasks = relationship(
         "Task",
         back_populates="teacher"

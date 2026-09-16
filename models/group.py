@@ -1,4 +1,4 @@
-from sqlalchemy import String
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
@@ -12,9 +12,33 @@ class Group(Base):
         autoincrement=True
     )
 
+    # Название группы
+    # Например: GD-101
     name: Mapped[str] = mapped_column(
         String(100),
         unique=True
+    )
+
+    # Код для самостоятельного вступления студентов
+    # Например: K7P2XA
+    invite_code: Mapped[str] = mapped_column(
+        String(20),
+        unique=True,
+        nullable=False
+    )
+
+    # Преподаватель, которому принадлежит группа
+    teacher_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id")
+    )
+
+    # -------------------------
+    # Relationships
+    # -------------------------
+
+    teacher = relationship(
+        "User",
+        back_populates="groups"
     )
 
     members = relationship(

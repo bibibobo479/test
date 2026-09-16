@@ -51,7 +51,10 @@ def register(
         password_hash=hash_password(
             user_data.password
         ),
-        role=user_data.role
+
+        # Обычная регистрация =
+        # всегда учащийся
+        role="student"
     )
 
     db.add(new_user)

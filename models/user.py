@@ -12,52 +12,32 @@ class User(Base):
         autoincrement=True
     )
 
-    name: Mapped[str] = mapped_column(
-        String(100)
-    )
+    name: Mapped[str] = mapped_column(String(100))
+    email: Mapped[str] = mapped_column(String(255), unique=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    role: Mapped[str] = mapped_column(String(20))
 
-    email: Mapped[str] = mapped_column(
-        String(255),
-        unique=True
-    )
-
-    password_hash: Mapped[str] = mapped_column(
-        String(255)
-    )
-
-    role: Mapped[str] = mapped_column(
-        String(20)
-    )
-
-    # ==========================================
-    # Relationships
-    # ==========================================
-
-    # Группы преподавателя
     groups = relationship(
         "Group",
         back_populates="teacher"
     )
 
-    # Группы, в которых состоит студент
     group_memberships = relationship(
         "GroupMember",
         back_populates="student"
     )
 
-    # Занятия преподавателя
     lessons = relationship(
         "Lesson",
         back_populates="teacher"
     )
 
-    # Задания, созданные преподавателем
     created_tasks = relationship(
         "Task",
-        back_populates="teacher"
+        back_populates="teacher",
+        foreign_keys="Task.teacher_id"
     )
 
-    # Работы студента
     submissions = relationship(
         "Submission",
         back_populates="student"

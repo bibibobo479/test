@@ -52,7 +52,4 @@ class Lesson(Base):
         back_populates="lessons"
     )
 
-    tasks = relationship(
-        "Task",
-        back_populates="lesson"
-    )
+

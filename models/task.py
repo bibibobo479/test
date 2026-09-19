@@ -36,10 +36,10 @@ class Task(Base):
         ForeignKey("users.id")
     )
 
-    # Задание необязательно должно относиться
-    # к конкретному занятию
-    lesson_id: Mapped[int | None] = mapped_column(
-        ForeignKey("lessons.id"),
+    # NULL = задача для всей группы
+    # ID = задача конкретному студенту
+    student_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"),
         nullable=True
     )
 
@@ -50,12 +50,13 @@ class Task(Base):
 
     teacher = relationship(
         "User",
-        back_populates="created_tasks"
+        back_populates="created_tasks",
+        foreign_keys=[teacher_id]
     )
 
-    lesson = relationship(
-        "Lesson",
-        back_populates="tasks"
+    student = relationship(
+        "User",
+        foreign_keys=[student_id]
     )
 
     submissions = relationship(

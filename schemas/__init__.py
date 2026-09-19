@@ -3,5 +3,7 @@ from models.group import Group
 from models.group_member import GroupMember
 from models.lesson import Lesson
 from models.task import Task
+from models.subtask import Subtask
+from models.subtask_comment import SubtaskComment
 from models.submission import Submission
 from models.grade import Grade

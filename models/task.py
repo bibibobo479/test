@@ -28,6 +28,11 @@ class Task(Base):
         default=100
     )
 
+    status: Mapped[str] = mapped_column(
+        String(30),
+        default="todo"
+    )
+
     group_id: Mapped[int] = mapped_column(
         ForeignKey("groups.id")
     )
@@ -36,8 +41,8 @@ class Task(Base):
         ForeignKey("users.id")
     )
 
-    # NULL = задача для всей группы
-    # ID = задача конкретному студенту
+    # NULL -> задача всей группе
+    # ID -> задача конкретному студенту
     student_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"),
         nullable=True
@@ -57,6 +62,12 @@ class Task(Base):
     student = relationship(
         "User",
         foreign_keys=[student_id]
+    )
+
+    subtasks = relationship(
+        "Subtask",
+        back_populates="task",
+        cascade="all, delete-orphan"
     )
 
     submissions = relationship(

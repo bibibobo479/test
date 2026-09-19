@@ -54,6 +54,8 @@ class TaskResponse(BaseModel):
     deadline: datetime
     max_score: int
 
+    status: str
+
     group_id: int
     teacher_id: int
     student_id: int | None

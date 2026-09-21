@@ -19,7 +19,9 @@ class GroupMember(Base):
     student_id: Mapped[int] = mapped_column(
         ForeignKey("users.id")
     )
-
+    is_leader: Mapped[bool] = mapped_column(
+        default=False,
+    )
     group = relationship(
         "Group",
         back_populates="members"

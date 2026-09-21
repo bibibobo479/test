@@ -58,3 +58,8 @@ class Group(Base):
         back_populates="group",
         cascade="all, delete-orphan"
     )
+    stages = relationship(
+        "Stage",
+        back_populates="group",
+        cascade="all, delete-orphan",
+    )

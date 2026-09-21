@@ -11,30 +11,33 @@ from pydantic import (
 class TaskCreate(BaseModel):
     title: str = Field(
         min_length=3,
-        max_length=200
+        max_length=200,
     )
 
     description: str = Field(
-        min_length=3
+        min_length=3,
     )
 
     deadline: datetime
 
     max_score: int = Field(
         default=100,
-        gt=0
+        gt=0,
     )
 
     group_id: int = Field(
-        gt=0
+        gt=0,
+    )
+
+    # Этап проекта, внутри которого создаётся задача.
+    stage_id: int = Field(
+        gt=0,
     )
 
     student_id: int | None = Field(
         default=None,
-        gt=0
+        gt=0,
     )
-
-
 
     @field_validator("deadline")
     @classmethod
@@ -53,13 +56,13 @@ class TaskResponse(BaseModel):
     description: str
     deadline: datetime
     max_score: int
-
     status: str
 
     group_id: int
+    stage_id: int | None
     teacher_id: int
     student_id: int | None
 
     model_config = ConfigDict(
-        from_attributes=True
+        from_attributes=True,
     )

@@ -47,7 +47,15 @@ class Task(Base):
         ForeignKey("users.id"),
         nullable=True
     )
+    stage_id: Mapped[int | None] = mapped_column(
+        ForeignKey("stages.id"),
+        nullable=True,
+    )
 
+    stage = relationship(
+        "Stage",
+        back_populates="tasks",
+    )
     group = relationship(
         "Group",
         back_populates="tasks"

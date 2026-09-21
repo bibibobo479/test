@@ -88,3 +88,9 @@ class Subtask(Base):
         back_populates="subtask",
         cascade="all, delete-orphan",
     )
+
+    history = relationship(
+        "TaskHistory",
+        back_populates="subtask",
+        cascade="all, delete-orphan",
+    )

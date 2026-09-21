@@ -8,6 +8,7 @@ from models.group_member import GroupMember
 from models.subtask import Subtask
 from models.subtask_comment import SubtaskComment
 from models.task import Task
+from models.taskhistory import TaskHistory
 from models.user import User
 
 from schemas.subtask import (
@@ -19,6 +20,7 @@ from schemas.subtask_comment import (
     SubtaskCommentCreate,
     SubtaskCommentResponse,
 )
+from schemas.task_history import TaskHistoryResponse
 
 from security import get_current_user
 
@@ -32,6 +34,34 @@ router = APIRouter(
 # ============================================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 # ============================================================
+
+
+def add_history(
+    db: Session,
+    subtask_id: int,
+    user_id: int,
+    action: str,
+    old_value: str | None = None,
+    new_value: str | None = None,
+) -> TaskHistory:
+    """
+    Добавить запись в историю подзадачи.
+
+    commit здесь специально не вызывается.
+    История сохраняется вместе с основным изменением.
+    """
+
+    history = TaskHistory(
+        subtask_id=subtask_id,
+        user_id=user_id,
+        action=action,
+        old_value=old_value,
+        new_value=new_value,
+    )
+
+    db.add(history)
+
+    return history
 
 
 def get_membership(
@@ -66,7 +96,6 @@ def check_subtask_manager_access(
     2. главный студент конкретной группы/проекта.
     """
 
-    # Преподаватель может управлять только своими задачами.
     if current_user.role == "teacher":
         if task.teacher_id != current_user.id:
             raise HTTPException(
@@ -76,8 +105,6 @@ def check_subtask_manager_access(
 
         return
 
-    # Все остальные управляющие действия доступны
-    # только студентам.
     if current_user.role != "student":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -96,12 +123,13 @@ def check_subtask_manager_access(
             detail="Вы не состоите в группе этой задачи",
         )
 
-    # Проверяем, является ли студент главным
-    # именно в этом проекте.
     if not membership.is_leader:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Управлять подзадачами может только главный студент проекта",
+            detail=(
+                "Управлять подзадачами может "
+                "только главный студент проекта"
+            ),
         )
 
 
@@ -123,7 +151,6 @@ def create_subtask(
 ):
     """Создать подзадачу внутри основной задачи."""
 
-    # Получаем основную задачу.
     task = db.get(Task, task_id)
 
     if not task:
@@ -132,16 +159,12 @@ def create_subtask(
             detail="Задача не найдена",
         )
 
-    # Создавать подзадачи могут студенты.
-    # Главный студент тоже имеет role="student",
-    # поэтому отдельная роль ему не требуется.
     if current_user.role != "student":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Подзадачи создают студенты",
         )
 
-    # Проверяем, что студент состоит в группе задачи.
     membership = get_membership(
         db=db,
         group_id=task.group_id,
@@ -154,8 +177,6 @@ def create_subtask(
             detail="Вы не состоите в группе этой задачи",
         )
 
-    # Если основная задача индивидуальная,
-    # она должна принадлежать текущему студенту.
     if (
         task.student_id is not None
         and task.student_id != current_user.id
@@ -165,11 +186,6 @@ def create_subtask(
             detail="Эта задача назначена другому студенту",
         )
 
-    # Для индивидуальной задачи подзадача автоматически
-    # назначается студенту.
-    #
-    # Для групповой задачи студент может либо взять
-    # подзадачу себе, либо оставить её свободной.
     if task.student_id is not None:
         subtask_student_id = current_user.id
     else:
@@ -179,7 +195,6 @@ def create_subtask(
             else None
         )
 
-    # Создаём подзадачу.
     subtask = Subtask(
         title=data.title,
         description=data.description,
@@ -191,10 +206,99 @@ def create_subtask(
     )
 
     db.add(subtask)
+
+    # Получаем ID подзадачи, не завершая транзакцию.
+    db.flush()
+
+    add_history(
+        db=db,
+        subtask_id=subtask.id,
+        user_id=current_user.id,
+        action="created",
+        old_value=None,
+        new_value="todo",
+    )
+
     db.commit()
     db.refresh(subtask)
 
     return subtask
+
+
+# ============================================================
+# ПОЛУЧЕНИЕ ИСТОРИИ ПОДЗАДАЧИ
+# ============================================================
+
+
+@router.get(
+    "/{subtask_id}/history",
+    response_model=list[TaskHistoryResponse],
+)
+def get_subtask_history(
+    subtask_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Получить историю изменений подзадачи."""
+
+    subtask = db.get(Subtask, subtask_id)
+
+    if not subtask:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Подзадача не найдена",
+        )
+
+    task = db.get(Task, subtask.task_id)
+
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Основная задача не найдена",
+        )
+
+    if current_user.role == "teacher":
+        if task.teacher_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Нет доступа к истории этой подзадачи",
+            )
+
+    elif current_user.role == "student":
+        membership = get_membership(
+            db=db,
+            group_id=task.group_id,
+            student_id=current_user.id,
+        )
+
+        if not membership:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Вы не состоите в группе этой задачи",
+            )
+
+        if (
+            task.student_id is not None
+            and task.student_id != current_user.id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Эта задача назначена другому студенту",
+            )
+
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Нет доступа к истории подзадачи",
+        )
+
+    history = db.scalars(
+        select(TaskHistory)
+        .where(TaskHistory.subtask_id == subtask.id)
+        .order_by(TaskHistory.created_at, TaskHistory.id)
+    ).all()
+
+    return history
 
 
 # ============================================================
@@ -213,7 +317,6 @@ def get_subtask(
 ):
     """Получить одну подзадачу по её ID."""
 
-    # Получаем подзадачу.
     subtask = db.get(Subtask, subtask_id)
 
     if not subtask:
@@ -222,7 +325,6 @@ def get_subtask(
             detail="Подзадача не найдена",
         )
 
-    # Получаем родительскую задачу.
     task = db.get(Task, subtask.task_id)
 
     if not task:
@@ -231,7 +333,6 @@ def get_subtask(
             detail="Основная задача не найдена",
         )
 
-    # Преподаватель видит подзадачи только своих задач.
     if current_user.role == "teacher":
         if task.teacher_id != current_user.id:
             raise HTTPException(
@@ -241,7 +342,6 @@ def get_subtask(
 
         return subtask
 
-    # Проверяем доступ студента.
     if current_user.role == "student":
         membership = get_membership(
             db=db,
@@ -255,8 +355,6 @@ def get_subtask(
                 detail="Вы не состоите в группе этой задачи",
             )
 
-        # Индивидуальная основная задача доступна
-        # только назначенному студенту.
         if (
             task.student_id is not None
             and task.student_id != current_user.id
@@ -290,7 +388,6 @@ def get_subtasks(
 ):
     """Получить все подзадачи основной задачи."""
 
-    # Получаем основную задачу.
     task = db.get(Task, task_id)
 
     if not task:
@@ -299,7 +396,6 @@ def get_subtasks(
             detail="Задача не найдена",
         )
 
-    # Преподаватель видит подзадачи только своих задач.
     if current_user.role == "teacher":
         if task.teacher_id != current_user.id:
             raise HTTPException(
@@ -320,8 +416,6 @@ def get_subtasks(
                 detail="Вы не состоите в группе этой задачи",
             )
 
-        # Если основная задача индивидуальная,
-        # она доступна только назначенному студенту.
         if (
             task.student_id is not None
             and task.student_id != current_user.id
@@ -337,7 +431,6 @@ def get_subtasks(
             detail="Нет доступа к подзадачам",
         )
 
-    # После проверки прав получаем все подзадачи.
     subtasks = db.scalars(
         select(Subtask)
         .where(Subtask.task_id == task.id)
@@ -363,7 +456,6 @@ def take_subtask(
 ):
     """Взять свободную подзадачу групповой задачи."""
 
-    # Получаем подзадачу.
     subtask = db.get(Subtask, subtask_id)
 
     if not subtask:
@@ -372,14 +464,12 @@ def take_subtask(
             detail="Подзадача не найдена",
         )
 
-    # Брать подзадачи могут только студенты.
     if current_user.role != "student":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Только студент может взять подзадачу",
         )
 
-    # Получаем родительскую задачу.
     task = db.get(Task, subtask.task_id)
 
     if not task:
@@ -388,7 +478,6 @@ def take_subtask(
             detail="Основная задача не найдена",
         )
 
-    # Проверяем членство студента в группе.
     membership = get_membership(
         db=db,
         group_id=task.group_id,
@@ -401,8 +490,6 @@ def take_subtask(
             detail="Вы не состоите в группе этой задачи",
         )
 
-    # Свободные подзадачи можно брать только
-    # у групповой основной задачи.
     if task.student_id is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -412,15 +499,27 @@ def take_subtask(
             ),
         )
 
-    # Проверяем, что подзадача действительно свободна.
     if subtask.student_id is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Эту подзадачу уже взял другой студент",
         )
+    if subtask.is_blocked:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Заблокированную подзадачу нельзя взять в работу",
+        )
 
-    # Назначаем текущего студента исполнителем.
     subtask.student_id = current_user.id
+
+    add_history(
+        db=db,
+        subtask_id=subtask.id,
+        user_id=current_user.id,
+        action="taken",
+        old_value=None,
+        new_value=str(current_user.id),
+    )
 
     db.commit()
     db.refresh(subtask)
@@ -444,7 +543,6 @@ def release_subtask(
 ):
     """Освободить свою подзадачу групповой задачи."""
 
-    # Получаем подзадачу.
     subtask = db.get(Subtask, subtask_id)
 
     if not subtask:
@@ -453,14 +551,12 @@ def release_subtask(
             detail="Подзадача не найдена",
         )
 
-    # Освобождать подзадачи могут только студенты.
     if current_user.role != "student":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Только студент может освободить подзадачу",
         )
 
-    # Получаем родительскую задачу.
     task = db.get(Task, subtask.task_id)
 
     if not task:
@@ -469,7 +565,6 @@ def release_subtask(
             detail="Основная задача не найдена",
         )
 
-    # Проверяем членство студента в группе.
     membership = get_membership(
         db=db,
         group_id=task.group_id,
@@ -482,24 +577,44 @@ def release_subtask(
             detail="Вы не состоите в группе этой задачи",
         )
 
-    # Индивидуальную подзадачу освободить нельзя.
     if task.student_id is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Подзадачу индивидуальной задачи нельзя освободить",
         )
 
-    # Освободить подзадачу может только её исполнитель.
     if subtask.student_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Вы не являетесь исполнителем этой подзадачи",
         )
 
-    # Делаем подзадачу свободной и возвращаем
-    # её в начальный статус.
+    old_student_id = subtask.student_id
+    old_status = subtask.status
+
     subtask.student_id = None
     subtask.status = "todo"
+
+    add_history(
+        db=db,
+        subtask_id=subtask.id,
+        user_id=current_user.id,
+        action="released",
+        old_value=str(old_student_id),
+        new_value=None,
+    )
+
+    # Если release заодно реально изменил статус,
+    # сохраняем это отдельным событием.
+    if old_status != "todo":
+        add_history(
+            db=db,
+            subtask_id=subtask.id,
+            user_id=current_user.id,
+            action="status_changed",
+            old_value=old_status,
+            new_value="todo",
+        )
 
     db.commit()
     db.refresh(subtask)
@@ -511,6 +626,7 @@ def release_subtask(
 # ИЗМЕНЕНИЕ СТАТУСА ПОДЗАДАЧИ
 # ============================================================
 
+
 @router.patch(
     "/{subtask_id}/status",
     response_model=SubtaskResponse,
@@ -521,26 +637,24 @@ def update_subtask_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # 1. Ищем подзадачу
+    """Изменить статус подзадачи."""
+
     subtask = db.get(Subtask, subtask_id)
 
     if not subtask:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Подзадача не найдена",
         )
 
-    # 2. Получаем родительскую задачу
     task = subtask.task
 
-    # 3. Статус меняют студенты
     if current_user.role != "student":
         raise HTTPException(
-            status_code=403,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Изменять статус подзадачи может только студент",
         )
 
-    # 4. Проверяем, что студент состоит в проекте
     membership = get_membership(
         db=db,
         group_id=task.group_id,
@@ -549,23 +663,24 @@ def update_subtask_status(
 
     if not membership:
         raise HTTPException(
-            status_code=403,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Вы не состоите в группе этой задачи",
         )
 
-    # 5. Заблокированную подзадачу менять нельзя
     if subtask.is_blocked:
         raise HTTPException(
-            status_code=409,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Подзадача заблокирована",
         )
 
-    # 6. Переход review -> done
-    # разрешён только главному студенту проекта
+    # --------------------------------------------------------
+    # review -> done
+    # --------------------------------------------------------
+
     if data.status == "done":
         if not membership.is_leader:
             raise HTTPException(
-                status_code=403,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail=(
                     "Перевести подзадачу в done может "
                     "только главный студент проекта"
@@ -574,32 +689,43 @@ def update_subtask_status(
 
         if subtask.status != "review":
             raise HTTPException(
-                status_code=409,
+                status_code=status.HTTP_409_CONFLICT,
                 detail=(
                     "Принять можно только подзадачу "
                     "со статусом review"
                 ),
             )
 
+        old_status = subtask.status
         subtask.status = "done"
+
+        add_history(
+            db=db,
+            subtask_id=subtask.id,
+            user_id=current_user.id,
+            action="accepted",
+            old_value=old_status,
+            new_value="done",
+        )
 
         db.commit()
         db.refresh(subtask)
 
         return subtask
 
-    # 7. Остальные переходы может делать
-    # только назначенный исполнитель
+    # --------------------------------------------------------
+    # Переходы обычного исполнителя
+    # --------------------------------------------------------
+
     if subtask.student_id != current_user.id:
         raise HTTPException(
-            status_code=403,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail=(
                 "Изменять статус может только "
                 "исполнитель подзадачи"
             ),
         )
 
-    # 8. Разрешённые переходы обычного студента
     allowed_transitions = {
         "todo": "in_progress",
         "in_progress": "review",
@@ -611,19 +737,17 @@ def update_subtask_status(
 
     if expected_status != data.status:
         raise HTTPException(
-            status_code=409,
+            status_code=status.HTTP_409_CONFLICT,
             detail=(
                 f"Недопустимый переход статуса: "
                 f"{subtask.status} -> {data.status}"
             ),
         )
 
-    # 9. При отправке на review
-    # обязательно нужен результат работы
     if data.status == "review":
         if not data.result:
             raise HTTPException(
-                status_code=400,
+                status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
                     "При отправке на проверку "
                     "необходимо указать результат работы"
@@ -633,13 +757,23 @@ def update_subtask_status(
         subtask.result = data.result
         subtask.external_url = data.external_url
 
-    # 10. Меняем статус
+    old_status = subtask.status
     subtask.status = data.status
+
+    add_history(
+        db=db,
+        subtask_id=subtask.id,
+        user_id=current_user.id,
+        action="status_changed",
+        old_value=old_status,
+        new_value=subtask.status,
+    )
 
     db.commit()
     db.refresh(subtask)
 
     return subtask
+
 
 # ============================================================
 # БЛОКИРОВКА ПОДЗАДАЧИ
@@ -655,15 +789,8 @@ def block_subtask(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Заблокировать подзадачу.
+    """Заблокировать подзадачу."""
 
-    Доступ:
-    - преподаватель-владелец задачи;
-    - главный студент проекта.
-    """
-
-    # Получаем подзадачу.
     subtask = db.get(Subtask, subtask_id)
 
     if not subtask:
@@ -672,7 +799,6 @@ def block_subtask(
             detail="Подзадача не найдена",
         )
 
-    # Получаем родительскую задачу.
     task = db.get(Task, subtask.task_id)
 
     if not task:
@@ -681,15 +807,28 @@ def block_subtask(
             detail="Основная задача не найдена",
         )
 
-    # Проверяем расширенные права.
     check_subtask_manager_access(
         db=db,
         task=task,
         current_user=current_user,
     )
 
-    # Блокируем подзадачу.
+    if subtask.is_blocked:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Подзадача уже заблокирована",
+        )
+
     subtask.is_blocked = True
+
+    add_history(
+        db=db,
+        subtask_id=subtask.id,
+        user_id=current_user.id,
+        action="blocked",
+        old_value="false",
+        new_value="true",
+    )
 
     db.commit()
     db.refresh(subtask)
@@ -711,15 +850,8 @@ def unblock_subtask(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Разблокировать подзадачу.
+    """Разблокировать подзадачу."""
 
-    Доступ:
-    - преподаватель-владелец задачи;
-    - главный студент проекта.
-    """
-
-    # Получаем подзадачу.
     subtask = db.get(Subtask, subtask_id)
 
     if not subtask:
@@ -728,24 +860,36 @@ def unblock_subtask(
             detail="Подзадача не найдена",
         )
 
-    # Получаем родительскую задачу.
     task = db.get(Task, subtask.task_id)
 
     if not task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Основная задача не найддена",
+            detail="Основная задача не найдена",
         )
 
-    # Проверяем расширенные права.
     check_subtask_manager_access(
         db=db,
         task=task,
         current_user=current_user,
     )
 
-    # Разблокируем подзадачу.
+    if not subtask.is_blocked:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Подзадача уже разблокирована",
+        )
+
     subtask.is_blocked = False
+
+    add_history(
+        db=db,
+        subtask_id=subtask.id,
+        user_id=current_user.id,
+        action="unblocked",
+        old_value="true",
+        new_value="false",
+    )
 
     db.commit()
     db.refresh(subtask)
@@ -771,7 +915,6 @@ def create_subtask_comment(
 ):
     """Добавить комментарий к подзадаче."""
 
-    # Получаем подзадачу.
     subtask = db.get(Subtask, subtask_id)
 
     if not subtask:
@@ -780,7 +923,6 @@ def create_subtask_comment(
             detail="Подзадача не найдена",
         )
 
-    # Получаем родительскую задачу.
     task = db.get(Task, subtask.task_id)
 
     if not task:
@@ -789,8 +931,6 @@ def create_subtask_comment(
             detail="Основная задача не найдена",
         )
 
-    # Преподаватель может комментировать
-    # только свои задачи.
     if current_user.role == "teacher":
         if task.teacher_id != current_user.id:
             raise HTTPException(
@@ -814,8 +954,6 @@ def create_subtask_comment(
                 detail="Вы не состоите в группе этой задачи",
             )
 
-        # Для индивидуальной основной задачи
-        # доступ имеет только назначенный студент.
         if (
             task.student_id is not None
             and task.student_id != current_user.id
@@ -831,7 +969,6 @@ def create_subtask_comment(
             detail="Нет доступа к комментариям",
         )
 
-    # Создаём комментарий.
     subtask_comment = SubtaskComment(
         text=data.text,
         subtask_id=subtask.id,
@@ -861,7 +998,6 @@ def get_subtask_comments(
 ):
     """Получить комментарии подзадачи."""
 
-    # Получаем подзадачу.
     subtask = db.get(Subtask, subtask_id)
 
     if not subtask:
@@ -870,7 +1006,6 @@ def get_subtask_comments(
             detail="Подзадача не найдена",
         )
 
-    # Получаем родительскую задачу.
     task = db.get(Task, subtask.task_id)
 
     if not task:
@@ -879,15 +1014,16 @@ def get_subtask_comments(
             detail="Основная задача не найдена",
         )
 
-    # Проверяем доступ преподавателя.
     if current_user.role == "teacher":
         if task.teacher_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Вы не можете читать комментарии чужой задачи",
+                detail=(
+                    "Вы не можете читать "
+                    "комментарии чужой задачи"
+                ),
             )
 
-    # Проверяем доступ студента.
     elif current_user.role == "student":
         membership = get_membership(
             db=db,
@@ -901,8 +1037,6 @@ def get_subtask_comments(
                 detail="Вы не состоите в группе этой задачи",
             )
 
-        # Индивидуальная основная задача доступна
-        # только назначенному студенту.
         if (
             task.student_id is not None
             and task.student_id != current_user.id
@@ -918,7 +1052,6 @@ def get_subtask_comments(
             detail="Нет доступа к комментариям",
         )
 
-    # Получаем комментарии в порядке их создания.
     comments = db.scalars(
         select(SubtaskComment)
         .where(SubtaskComment.subtask_id == subtask.id)

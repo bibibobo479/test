@@ -163,6 +163,70 @@ def create_task(
 
 
 @router.get(
+    "/{task_id}",
+    response_model=list[TaskResponse],
+)
+def get_tasks(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Получить список доступных пользователю основных задач.
+
+    Преподаватель получает созданные им задачи.
+    Студент получает групповые задачи и индивидуальные
+    задачи, назначенные непосредственно ему.
+    """
+
+    # --------------------------------------------------------
+    # ПРЕПОДАВАТЕЛЬ
+    # --------------------------------------------------------
+
+    if current_user.role == "teacher":
+        task = db.scalars(
+            select(Task)
+            .where(
+                Task.teacher_id == current_user.id,
+                Task.id == task_id,
+            )
+            .order_by(
+                Task.deadline,
+            )
+        )
+
+        return task
+
+    # --------------------------------------------------------
+    # СТУДЕНТ
+    # --------------------------------------------------------
+
+    if current_user.role == "student":
+        task = db.scalars(
+            select(Task)
+            .join(
+                GroupMember,
+                GroupMember.group_id == Task.group_id,
+            )
+            .where(
+                GroupMember.student_id == current_user.id,
+                Task.id == task_id,
+                or_(
+                    Task.student_id.is_(None),
+                    Task.student_id == current_user.id,
+                ),
+            )
+            .order_by(
+                Task.deadline,
+            )
+        )
+
+        return task
+
+    return []
+
+
+@router.get(
     "",
     response_model=list[TaskResponse],
 )

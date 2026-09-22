@@ -3,7 +3,7 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 
 DATABASE_URL = (
-    "mysql+pymysql://root:1741@localhost:3306/gamedev_journal"
+    "mysql+pymysql://gamedev:gamedev123@localhost:3306/gamedev_journal"
 )
 
 

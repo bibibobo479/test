@@ -10,6 +10,7 @@ import { EpicPage } from "./pages/EpicPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProjectPage } from "./pages/ProjectPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
+import { RegisterPage } from "./pages/RegisterPage";
 
 function ProtectedRoute({
   children,
@@ -38,6 +39,12 @@ function App() {
     path="/login"
     element={<LoginPage />}
     />
+
+    <Route
+    path="/register"
+    element={<RegisterPage />}
+    />
+
 
     <Route
     path="/"

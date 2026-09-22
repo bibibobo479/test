@@ -2,6 +2,10 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { api } from "../api/api";
+import {
+    Link,
+
+} from "react-router-dom";
 
 export function LoginPage() {
     const navigate = useNavigate();
@@ -83,6 +87,13 @@ export function LoginPage() {
         {loading ? "Входим..." : "Войти"}
         </button>
         </form>
+        <div className="auth-footer">
+        Нет аккаунта?
+
+        <Link to="/register">
+        Зарегистрироваться
+        </Link>
+        </div>
         </div>
         </div>
     );

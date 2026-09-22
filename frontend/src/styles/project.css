@@ -273,6 +273,9 @@
 /* ------------------------------
  *  EXPECTED RESULT
  - *----------------------------- */
+.epic-card {
+    cursor: pointer;
+}
 
 .expected-result {
     margin-top: 22px;

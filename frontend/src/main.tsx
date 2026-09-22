@@ -7,7 +7,10 @@ import "./styles/global.css";
 
 
 
+import "./styles/global.css";
 import "./styles/project.css";
+import "./styles/epic.css";
+
 createRoot(
   document.getElementById("root")!,
 ).render(

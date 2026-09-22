@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 import type { Task } from "../types/task";
 
 interface EpicCardProps {
@@ -37,8 +39,17 @@ function getStatusName(status: string) {
 export function EpicCard({
     epic,
 }: EpicCardProps) {
+    const navigate = useNavigate();
+
+    function openEpic() {
+        navigate(`/epics/${epic.id}`);
+    }
+
     return (
-        <article className="epic-card">
+        <article
+        className="epic-card"
+        onClick={openEpic}
+        >
         <div className="epic-header">
         <div>
         <span className="epic-label">

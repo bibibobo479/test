@@ -164,36 +164,41 @@ def create_task(
 
 @router.get(
     "/{task_id}",
-    response_model=list[TaskResponse],
+    response_model=TaskResponse,
 )
-def get_tasks(
+def get_task(
     task_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
-    Получить список доступных пользователю основных задач.
+    Получить одну основную задачу (Epic) по ID.
 
-    Преподаватель получает созданные им задачи.
-    Студент получает групповые задачи и индивидуальные
-    задачи, назначенные непосредственно ему.
+    Пользователь получает Epic только в том случае,
+    если имеет доступ к соответствующему проекту.
     """
+
+    task = db.get(
+        Task,
+        task_id,
+    )
+
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена",
+        )
 
     # --------------------------------------------------------
     # ПРЕПОДАВАТЕЛЬ
     # --------------------------------------------------------
 
     if current_user.role == "teacher":
-        task = db.scalars(
-            select(Task)
-            .where(
-                Task.teacher_id == current_user.id,
-                Task.id == task_id,
+        if task.teacher_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Нет доступа к этой задаче",
             )
-            .order_by(
-                Task.deadline,
-            )
-        )
 
         return task
 
@@ -202,28 +207,36 @@ def get_tasks(
     # --------------------------------------------------------
 
     if current_user.role == "student":
-        task = db.scalars(
-            select(Task)
-            .join(
-                GroupMember,
-                GroupMember.group_id == Task.group_id,
-            )
-            .where(
+        membership = db.scalar(
+            select(GroupMember).where(
+                GroupMember.group_id == task.group_id,
                 GroupMember.student_id == current_user.id,
-                Task.id == task_id,
-                or_(
-                    Task.student_id.is_(None),
-                    Task.student_id == current_user.id,
-                ),
-            )
-            .order_by(
-                Task.deadline,
             )
         )
 
+        if not membership:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Нет доступа к этой задаче",
+            )
+
+        # Если Epic назначен конкретному студенту,
+        # другие студенты его не получают.
+        if (
+            task.student_id is not None
+            and task.student_id != current_user.id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Нет доступа к этой задаче",
+            )
+
         return task
 
-    return []
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Нет доступа к этой задаче",
+    )
 
 
 @router.get(

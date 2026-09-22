@@ -6,6 +6,7 @@ import {
   Routes,
 } from "react-router-dom";
 
+import { EpicPage } from "./pages/EpicPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProjectPage } from "./pages/ProjectPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
@@ -15,10 +16,16 @@ function ProtectedRoute({
 }: {
   children: ReactNode;
 }) {
-  const token = localStorage.getItem("access_token");
+  const token =
+  localStorage.getItem("access_token");
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+      to="/login"
+      replace
+      />
+    );
   }
 
   return children;
@@ -46,6 +53,15 @@ function App() {
     element={
       <ProtectedRoute>
       <ProjectPage />
+      </ProtectedRoute>
+    }
+    />
+
+    <Route
+    path="/epics/:epicId"
+    element={
+      <ProtectedRoute>
+      <EpicPage />
       </ProtectedRoute>
     }
     />

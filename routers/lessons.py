@@ -4,10 +4,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 
-from schemas.lessons import (
-    LessonCreate,
-    LessonResponse
-)
+from schemas.lessons import LessonCreate, LessonResponse
 
 from models.group import Group
 from models.group_member import GroupMember
@@ -18,7 +15,6 @@ from security import (
     get_current_user,
     require_teacher,
 )
-
 
 router = APIRouter(
     prefix="/lessons",
@@ -31,26 +27,19 @@ router = APIRouter(
 # Только преподаватель
 # =========================================================
 
-@router.post(
-    "",
-    response_model=LessonResponse,
-    status_code=status.HTTP_201_CREATED
-)
+
+@router.post("", response_model=LessonResponse, status_code=status.HTTP_201_CREATED)
 def create_lesson(
     data: LessonCreate,
     db: Session = Depends(get_db),
-    teacher: User = Depends(require_teacher)
+    teacher: User = Depends(require_teacher),
 ):
     # Ищем группу
-    group = db.get(
-        Group,
-        data.group_id
-    )
+    group = db.get(Group, data.group_id)
 
     if not group:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Группа не найдена"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Группа не найдена"
         )
 
     # Проверяем, что преподаватель
@@ -58,7 +47,7 @@ def create_lesson(
     if group.teacher_id != teacher.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Вы не можете создавать занятия для чужой группы"
+            detail="Вы не можете создавать занятия для чужой группы",
         )
 
     # Создаём занятие
@@ -68,13 +57,9 @@ def create_lesson(
         start_time=data.start_time,
         end_time=data.end_time,
         classroom=data.classroom,
-        meeting_url=(
-            str(data.meeting_url)
-            if data.meeting_url
-            else None
-        ),
+        meeting_url=(str(data.meeting_url) if data.meeting_url else None),
         group_id=data.group_id,
-        teacher_id=teacher.id
+        teacher_id=teacher.id,
     )
 
     db.add(lesson)
@@ -91,6 +76,7 @@ def create_lesson(
 # student -> занятия групп, в которых он состоит
 # =========================================================
 
+
 @router.get(
     "",
     response_model=list[LessonResponse],
@@ -106,13 +92,8 @@ def get_lessons(
     if current_user.role == "teacher":
         lessons = db.scalars(
             select(Lesson)
-            .where(
-                Lesson.teacher_id == current_user.id
-            )
-            .order_by(
-                Lesson.lesson_date,
-                Lesson.start_time
-            )
+            .where(Lesson.teacher_id == current_user.id)
+            .order_by(Lesson.lesson_date, Lesson.start_time)
         ).all()
 
         return lessons
@@ -124,37 +105,24 @@ def get_lessons(
     if current_user.role == "student":
         lessons = db.scalars(
             select(Lesson)
-            .join(
-                GroupMember,
-                GroupMember.group_id == Lesson.group_id
-            )
-            .where(
-                GroupMember.student_id == current_user.id
-            )
-            .order_by(
-                Lesson.lesson_date,
-                Lesson.start_time
-            )
+            .join(GroupMember, GroupMember.group_id == Lesson.group_id)
+            .where(GroupMember.student_id == current_user.id)
+            .order_by(Lesson.lesson_date, Lesson.start_time)
         ).all()
 
         return lessons
 
     return []
 
-@router.get(
-    "/{lesson_id}",
-    response_model=LessonResponse
-)
+
+@router.get("/{lesson_id}", response_model=LessonResponse)
 def get_lesson(
     lesson_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     # 1. Ищем занятие
-    lesson = db.get(
-        Lesson,
-        lesson_id
-    )
+    lesson = db.get(Lesson, lesson_id)
 
     # 2. Проверяем существование
     if not lesson:
@@ -199,19 +167,14 @@ def get_lesson(
     )
 
 
-@router.delete(
-    "/{lesson_id}"
-)
+@router.delete("/{lesson_id}")
 def remove_lesson(
     lesson_id: int,
     db: Session = Depends(get_db),
     teacher: User = Depends(require_teacher),
 ):
     # 1. Ищем занятие
-    lesson = db.get(
-        Lesson,
-        lesson_id
-    )
+    lesson = db.get(Lesson, lesson_id)
 
     # 2. Проверяем существование
     if not lesson:
@@ -232,6 +195,4 @@ def remove_lesson(
     db.commit()
 
     # 5. Возвращаем результат
-    return {
-        "message": "Занятие удалено"
-    }
+    return {"message": "Занятие удалено"}

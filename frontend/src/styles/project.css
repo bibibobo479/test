@@ -1,44 +1,44 @@
 .project-header {
-    margin: 20px 0 32px;
+  margin: 20px 0 32px;
 }
 
 .project-header-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
 }
 
 .project-header h1 {
-    margin: 6px 0 8px;
-    font-size: 34px;
-    line-height: 1.15;
+  margin: 6px 0 8px;
+  font-size: 34px;
+  line-height: 1.15;
 }
 
 .project-header p {
-    max-width: 650px;
-    margin: 0;
-    color: #6b7280;
-    line-height: 1.6;
+  max-width: 650px;
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.6;
 }
 
 .page-label {
-    color: #6366f1;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 1.3px;
+  color: #6366f1;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
 }
 
 .back-button {
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: #6366f1;
-    font-weight: 600;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #6366f1;
+  font-weight: 600;
 }
 
 .back-button:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 /* ------------------------------
@@ -46,70 +46,70 @@
  - *----------------------------- */
 
 .stages-list {
-    display: flex;
-    flex-direction: column;
-    gap: 42px;
+  display: flex;
+  flex-direction: column;
+  gap: 42px;
 }
 
 .stage-card {
-    padding: 0;
-    border: 0;
-    background: transparent;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .stage-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
 
-    padding-bottom: 16px;
-    border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .stage-card-header h2 {
-    margin: 5px 0 0;
-    font-size: 22px;
+  margin: 5px 0 0;
+  font-size: 22px;
 }
 
 .stage-number {
-    color: #9ca3af;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 .stage-status {
-    padding: 7px 12px;
-    border-radius: 999px;
+  padding: 7px 12px;
+  border-radius: 999px;
 
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .stage-status.planned {
-    background: #f3f4f6;
-    color: #6b7280;
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
 .stage-status.active {
-    background: #eef2ff;
-    color: #4f46e5;
+  background: #eef2ff;
+  color: #4f46e5;
 }
 
 .stage-status.completed {
-    background: #ecfdf3;
-    color: #15803d;
+  background: #ecfdf3;
+  color: #15803d;
 }
 
 .stage-description {
-    max-width: 750px;
-    margin: 16px 0 20px;
+  max-width: 750px;
+  margin: 16px 0 20px;
 
-    color: #6b7280;
-    line-height: 1.6;
+  color: #6b7280;
+  line-height: 1.6;
 }
 
 /* ------------------------------
@@ -117,26 +117,26 @@
  - *----------------------------- */
 
 .stage-info {
-    display: flex;
-    gap: 40px;
-    margin-bottom: 26px;
+  display: flex;
+  gap: 40px;
+  margin-bottom: 26px;
 }
 
 .stage-info > div {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .stage-info span {
-    color: #9ca3af;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 .stage-info strong {
-    font-size: 13px;
+  font-size: 13px;
 }
 
 /* ------------------------------
@@ -144,184 +144,181 @@
  - *----------------------------- */
 
 .stage-epics {
-    margin-top: 10px;
+  margin-top: 10px;
 }
 
 .stage-epics-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 
-    margin-bottom: 14px;
+  margin-bottom: 14px;
 }
 
 .stage-epics-header h3 {
-    margin: 0;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
+  margin: 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
 }
 
 .stage-epics-header > span {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    min-width: 24px;
-    height: 24px;
-    padding: 0 7px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
 
-    border-radius: 999px;
+  border-radius: 999px;
 
-    background: #eef2ff;
-    color: #4f46e5;
+  background: #eef2ff;
+  color: #4f46e5;
 
-    font-size: 11px;
-    font-weight: 700;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .epics-list {
-    display: grid;
-    grid-template-columns:
-    repeat(auto-fit, minmax(300px, 1fr));
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 
-    gap: 16px;
+  gap: 16px;
 }
 
 .epic-card {
-    padding: 20px;
+  padding: 20px;
 
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
 
-    background: #ffffff;
+  background: #ffffff;
 
-    transition:
+  transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
     border-color 0.15s ease;
 }
 
 .epic-card:hover {
-    transform: translateY(-2px);
+  transform: translateY(-2px);
 
-    border-color: #c7d2fe;
+  border-color: #c7d2fe;
 
-    box-shadow:
-    0 8px 24px
-    rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
 .epic-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .epic-label {
-    color: #6366f1;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 1px;
+  color: #6366f1;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
 }
 
 .epic-card h3 {
-    margin: 6px 0 0;
+  margin: 6px 0 0;
 
-    font-size: 17px;
-    line-height: 1.35;
+  font-size: 17px;
+  line-height: 1.35;
 }
 
 .epic-description {
-    margin: 14px 0 20px;
+  margin: 14px 0 20px;
 
-    color: #6b7280;
+  color: #6b7280;
 
-    font-size: 13px;
-    line-height: 1.55;
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .epic-status {
-    padding: 5px 8px;
+  padding: 5px 8px;
 
-    border-radius: 6px;
+  border-radius: 6px;
 
-    background: #f3f4f6;
-    color: #6b7280;
+  background: #f3f4f6;
+  color: #6b7280;
 
-    font-size: 10px;
-    font-weight: 700;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .epic-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 
-    padding-top: 14px;
+  padding-top: 14px;
 
-    border-top: 1px solid #f0f1f3;
+  border-top: 1px solid #f0f1f3;
 
-    font-size: 12px;
+  font-size: 12px;
 }
 
 .epic-footer span {
-    color: #9ca3af;
+  color: #9ca3af;
 }
 
 /* ------------------------------
  *  EXPECTED RESULT
  - *----------------------------- */
 .epic-card {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .expected-result {
-    margin-top: 22px;
-    padding: 14px 16px;
+  margin-top: 22px;
+  padding: 14px 16px;
 
-    border-left: 3px solid #6366f1;
-    border-radius: 0 6px 6px 0;
+  border-left: 3px solid #6366f1;
+  border-radius: 0 6px 6px 0;
 
-    background: #f8f9ff;
+  background: #f8f9ff;
 }
 
 .expected-result span {
-    color: #6366f1;
+  color: #6366f1;
 
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.7px;
-    text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
 }
 
 .expected-result p {
-    margin: 5px 0 0;
+  margin: 5px 0 0;
 
-    color: #4b5563;
+  color: #4b5563;
 
-    font-size: 13px;
-    line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .empty-epics {
-    padding: 24px;
+  padding: 24px;
 
-    border: 1px dashed #d1d5db;
-    border-radius: 8px;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
 
-    color: #9ca3af;
-    text-align: center;
+  color: #9ca3af;
+  text-align: center;
 }
 
 .empty-state,
 .state-card {
-    padding: 40px;
+  padding: 40px;
 
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
 
-    background: white;
-    text-align: center;
+  background: white;
+  text-align: center;
 }

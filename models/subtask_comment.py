@@ -9,32 +9,16 @@ from database import Base
 class SubtaskComment(Base):
     __tablename__ = "subtask_comments"
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-        autoincrement=True
-    )
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    text: Mapped[str] = mapped_column(
-        Text
-    )
+    text: Mapped[str] = mapped_column(Text)
 
-    created_at: Mapped[datetime] = mapped_column(
-        default=datetime.now
-    )
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now)
 
-    subtask_id: Mapped[int] = mapped_column(
-        ForeignKey("subtasks.id")
-    )
+    subtask_id: Mapped[int] = mapped_column(ForeignKey("subtasks.id"))
 
-    author_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id")
-    )
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
-    subtask = relationship(
-        "Subtask",
-        back_populates="comments"
-    )
+    subtask = relationship("Subtask", back_populates="comments")
 
-    author = relationship(
-        "User"
-    )
+    author = relationship("User")

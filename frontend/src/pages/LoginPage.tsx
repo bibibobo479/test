@@ -2,99 +2,77 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { api } from "../api/api";
-import {
-    Link,
-
-} from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export function LoginPage() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-        setError("");
-        setLoading(true);
+    setError("");
+    setLoading(true);
 
-        try {
-            const response = await api.post("/auth/login", {
-                email,
-                password,
-            });
+    try {
+      const response = await api.post("/auth/login", {
+        email,
+        password,
+      });
 
-            localStorage.setItem(
-                "access_token",
-                response.data.access_token,
-            );
+      localStorage.setItem("access_token", response.data.access_token);
 
-            navigate("/");
-        } catch {
-            setError("Неверная почта или пароль");
-        } finally {
-            setLoading(false);
-        }
+      navigate("/");
+    } catch {
+      setError("Неверная почта или пароль");
+    } finally {
+      setLoading(false);
     }
+  }
 
-    return (
-        <div className="login-page">
-        <div className="login-card">
+  return (
+    <div className="login-page">
+      <div className="login-card">
         <h1>Project Lab</h1>
 
         <p>Система управления проектами лаборатории</p>
 
         <form onSubmit={handleSubmit}>
-        <label>
-        Электронная почта
+          <label>
+            Электронная почта
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          </label>
 
-        <input
-        type="email"
-        value={email}
-        onChange={(event) =>
-            setEmail(event.target.value)
-        }
-        required
-        />
-        </label>
+          <label>
+            Пароль
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </label>
 
-        <label>
-        Пароль
+          {error && <div className="error-message">{error}</div>}
 
-        <input
-        type="password"
-        value={password}
-        onChange={(event) =>
-            setPassword(event.target.value)
-        }
-        required
-        />
-        </label>
-
-        {error && (
-            <div className="error-message">
-            {error}
-            </div>
-        )}
-
-        <button
-        type="submit"
-        disabled={loading}
-        >
-        {loading ? "Входим..." : "Войти"}
-        </button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Входим..." : "Войти"}
+          </button>
         </form>
         <div className="auth-footer">
-        Нет аккаунта?
-
-        <Link to="/register">
-        Зарегистрироваться
-        </Link>
+          Нет аккаунта?
+          <Link to="/register">Зарегистрироваться</Link>
         </div>
-        </div>
-        </div>
-    );
+      </div>
+    </div>
+  );
 }

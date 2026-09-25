@@ -7,35 +7,18 @@ from database import Base
 class GroupMember(Base):
     __tablename__ = "group_members"
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-        autoincrement=True
-    )
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    group_id: Mapped[int] = mapped_column(
-        ForeignKey("groups.id")
-    )
+    group_id: Mapped[int] = mapped_column(ForeignKey("groups.id"))
 
-    student_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id")
-    )
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     is_leader: Mapped[bool] = mapped_column(
         default=False,
     )
-    group = relationship(
-        "Group",
-        back_populates="members"
-    )
+    group = relationship("Group", back_populates="members")
 
-    student = relationship(
-        "User",
-        back_populates="group_memberships"
-    )
+    student = relationship("User", back_populates="group_memberships")
 
     __table_args__ = (
-        UniqueConstraint(
-            "group_id",
-            "student_id",
-            name="uq_group_student"
-        ),
+        UniqueConstraint("group_id", "student_id", name="uq_group_student"),
     )

@@ -18,7 +18,6 @@ from schemas.stage import (
 
 from security import get_current_user
 
-
 router = APIRouter(
     prefix="/stages",
     tags=["Этапы"],

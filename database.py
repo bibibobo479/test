@@ -1,23 +1,13 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-
-DATABASE_URL = (
-    "mysql+pymysql://gamedev:gamedev123@localhost:3306/gamedev_journal"
-)
+DATABASE_URL = "mysql+pymysql://root:1741@localhost:3306/gamedev_journal"
 
 
-engine = create_engine(
-    DATABASE_URL,
-    echo=True
-)
+engine = create_engine(DATABASE_URL, echo=True)
 
 
-SessionLocal = sessionmaker(
-    bind=engine,
-    autoflush=False,
-    autocommit=False
-)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
 class Base(DeclarativeBase):

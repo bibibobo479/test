@@ -11,14 +11,9 @@ from pydantic import (
 
 
 class LessonCreate(BaseModel):
-    title: str = Field(
-        min_length=5,
-        max_length=100
-    )
+    title: str = Field(min_length=5, max_length=100)
 
-    group_id: int = Field(
-        gt=0
-    )
+    group_id: int = Field(gt=0)
 
     lesson_date: date
 
@@ -26,11 +21,7 @@ class LessonCreate(BaseModel):
 
     end_time: time
 
-    classroom: str | None = Field(
-        default=None,
-        min_length=1,
-        max_length=100
-    )
+    classroom: str | None = Field(default=None, min_length=1, max_length=100)
 
     meeting_url: HttpUrl | None = None
 
@@ -42,9 +33,7 @@ class LessonCreate(BaseModel):
     @classmethod
     def validate_lesson_date(cls, value: date):
         if value < date.today():
-            raise ValueError(
-                "Дата занятия не может быть в прошлом"
-            )
+            raise ValueError("Дата занятия не может быть в прошлом")
 
         return value
 
@@ -60,10 +49,7 @@ class LessonCreate(BaseModel):
         max_time = time(20, 0)
 
         if not min_time <= value <= max_time:
-            raise ValueError(
-                "Занятие должно начинаться "
-                "с 09:20 до 20:00"
-            )
+            raise ValueError("Занятие должно начинаться " "с 09:20 до 20:00")
 
         return value
 
@@ -79,10 +65,7 @@ class LessonCreate(BaseModel):
         max_time = time(21, 0)
 
         if not min_time <= value <= max_time:
-            raise ValueError(
-                "Занятие должно заканчиваться "
-                "с 09:20 до 21:00"
-            )
+            raise ValueError("Занятие должно заканчиваться " "с 09:20 до 21:00")
 
         return value
 
@@ -93,10 +76,7 @@ class LessonCreate(BaseModel):
     @model_validator(mode="after")
     def validate_time_range(self):
         if self.end_time <= self.start_time:
-            raise ValueError(
-                "Время окончания должно быть "
-                "позже времени начала"
-            )
+            raise ValueError("Время окончания должно быть " "позже времени начала")
 
         return self
 
@@ -115,6 +95,4 @@ class LessonResponse(BaseModel):
     group_id: int
     teacher_id: int
 
-    model_config = ConfigDict(
-        from_attributes=True
-    )
+    model_config = ConfigDict(from_attributes=True)

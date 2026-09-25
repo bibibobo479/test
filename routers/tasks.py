@@ -20,7 +20,6 @@ from security import (
     require_teacher,
 )
 
-
 router = APIRouter(
     prefix="/tasks",
     tags=["Задачи"],
@@ -222,10 +221,7 @@ def get_task(
 
         # Если Epic назначен конкретному студенту,
         # другие студенты его не получают.
-        if (
-            task.student_id is not None
-            and task.student_id != current_user.id
-        ):
+        if task.student_id is not None and task.student_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Нет доступа к этой задаче",

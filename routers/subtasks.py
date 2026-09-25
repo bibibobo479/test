@@ -24,7 +24,6 @@ from schemas.task_history import TaskHistoryResponse
 
 from security import get_current_user
 
-
 router = APIRouter(
     prefix="/subtasks",
     tags=["Подзадачи"],
@@ -126,10 +125,7 @@ def check_subtask_manager_access(
     if not membership.is_leader:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=(
-                "Управлять подзадачами может "
-                "только главный студент проекта"
-            ),
+            detail=("Управлять подзадачами может " "только главный студент проекта"),
         )
 
 
@@ -177,10 +173,7 @@ def create_subtask(
             detail="Вы не состоите в группе этой задачи",
         )
 
-    if (
-        task.student_id is not None
-        and task.student_id != current_user.id
-    ):
+    if task.student_id is not None and task.student_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Эта задача назначена другому студенту",
@@ -189,11 +182,7 @@ def create_subtask(
     if task.student_id is not None:
         subtask_student_id = current_user.id
     else:
-        subtask_student_id = (
-            current_user.id
-            if data.take_for_myself
-            else None
-        )
+        subtask_student_id = current_user.id if data.take_for_myself else None
 
     subtask = Subtask(
         title=data.title,
@@ -277,10 +266,7 @@ def get_subtask_history(
                 detail="Вы не состоите в группе этой задачи",
             )
 
-        if (
-            task.student_id is not None
-            and task.student_id != current_user.id
-        ):
+        if task.student_id is not None and task.student_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Эта задача назначена другому студенту",
@@ -355,10 +341,7 @@ def get_subtask(
                 detail="Вы не состоите в группе этой задачи",
             )
 
-        if (
-            task.student_id is not None
-            and task.student_id != current_user.id
-        ):
+        if task.student_id is not None and task.student_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Эта задача назначена другому студенту",
@@ -416,10 +399,7 @@ def get_subtasks(
                 detail="Вы не состоите в группе этой задачи",
             )
 
-        if (
-            task.student_id is not None
-            and task.student_id != current_user.id
-        ):
+        if task.student_id is not None and task.student_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Эта задача назначена другому студенту",
@@ -432,9 +412,7 @@ def get_subtasks(
         )
 
     subtasks = db.scalars(
-        select(Subtask)
-        .where(Subtask.task_id == task.id)
-        .order_by(Subtask.created_at)
+        select(Subtask).where(Subtask.task_id == task.id).order_by(Subtask.created_at)
     ).all()
 
     return subtasks
@@ -493,10 +471,7 @@ def take_subtask(
     if task.student_id is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "У индивидуальной задачи подзадачи "
-                "уже назначены студенту"
-            ),
+            detail=("У индивидуальной задачи подзадачи " "уже назначены студенту"),
         )
 
     if subtask.student_id is not None:
@@ -682,18 +657,14 @@ def update_subtask_status(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=(
-                    "Перевести подзадачу в done может "
-                    "только главный студент проекта"
+                    "Перевести подзадачу в done может " "только главный студент проекта"
                 ),
             )
 
         if subtask.status != "review":
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=(
-                    "Принять можно только подзадачу "
-                    "со статусом review"
-                ),
+                detail=("Принять можно только подзадачу " "со статусом review"),
             )
 
         old_status = subtask.status
@@ -720,10 +691,7 @@ def update_subtask_status(
     if subtask.student_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=(
-                "Изменять статус может только "
-                "исполнитель подзадачи"
-            ),
+            detail=("Изменять статус может только " "исполнитель подзадачи"),
         )
 
     allowed_transitions = {
@@ -731,16 +699,13 @@ def update_subtask_status(
         "in_progress": "review",
     }
 
-    expected_status = allowed_transitions.get(
-        subtask.status
-    )
+    expected_status = allowed_transitions.get(subtask.status)
 
     if expected_status != data.status:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
-                f"Недопустимый переход статуса: "
-                f"{subtask.status} -> {data.status}"
+                f"Недопустимый переход статуса: " f"{subtask.status} -> {data.status}"
             ),
         )
 
@@ -749,8 +714,7 @@ def update_subtask_status(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
-                    "При отправке на проверку "
-                    "необходимо указать результат работы"
+                    "При отправке на проверку " "необходимо указать результат работы"
                 ),
             )
 
@@ -935,10 +899,7 @@ def create_subtask_comment(
         if task.teacher_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=(
-                    "Вы не можете комментировать "
-                    "подзадачи чужой задачи"
-                ),
+                detail=("Вы не можете комментировать " "подзадачи чужой задачи"),
             )
 
     elif current_user.role == "student":
@@ -954,10 +915,7 @@ def create_subtask_comment(
                 detail="Вы не состоите в группе этой задачи",
             )
 
-        if (
-            task.student_id is not None
-            and task.student_id != current_user.id
-        ):
+        if task.student_id is not None and task.student_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Эта задача назначена другому студенту",
@@ -1018,10 +976,7 @@ def get_subtask_comments(
         if task.teacher_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=(
-                    "Вы не можете читать "
-                    "комментарии чужой задачи"
-                ),
+                detail=("Вы не можете читать " "комментарии чужой задачи"),
             )
 
     elif current_user.role == "student":
@@ -1037,10 +992,7 @@ def get_subtask_comments(
                 detail="Вы не состоите в группе этой задачи",
             )
 
-        if (
-            task.student_id is not None
-            and task.student_id != current_user.id
-        ):
+        if task.student_id is not None and task.student_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Эта задача назначена другому студенту",

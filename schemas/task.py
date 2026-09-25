@@ -43,9 +43,7 @@ class TaskCreate(BaseModel):
     @classmethod
     def validate_deadline(cls, value: datetime):
         if value <= datetime.now():
-            raise ValueError(
-                "Срок выполнения должен быть в будущем"
-            )
+            raise ValueError("Срок выполнения должен быть в будущем")
 
         return value
 

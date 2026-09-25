@@ -23,7 +23,6 @@ from security import (
     require_teacher,
 )
 
-
 router = APIRouter(
     prefix="/groups",
     tags=["Группы"],
@@ -37,51 +36,32 @@ router = APIRouter(
 def generate_invite_code() -> str:
     alphabet = string.ascii_uppercase + string.digits
 
-    return "".join(
-        secrets.choice(alphabet)
-        for _ in range(6)
-    )
+    return "".join(secrets.choice(alphabet) for _ in range(6))
 
-@router.post(
-    "",
-    response_model=GroupResponse,
-    status_code=status.HTTP_201_CREATED
-)
+
+@router.post("", response_model=GroupResponse, status_code=status.HTTP_201_CREATED)
 def create_group(
     data: GroupCreate,
     db: Session = Depends(get_db),
-    teacher: User = Depends(require_teacher)
+    teacher: User = Depends(require_teacher),
 ):
-    existing_group = db.scalar(
-        select(Group).where(
-            Group.name == data.name
-        )
-    )
+    existing_group = db.scalar(select(Group).where(Group.name == data.name))
 
     if existing_group:
         raise HTTPException(
-            status_code=400,
-            detail="Группа с таким названием уже существует"
+            status_code=400, detail="Группа с таким названием уже существует"
         )
 
     # Генерируем уникальный код
     while True:
         invite_code = generate_invite_code()
 
-        existing_code = db.scalar(
-            select(Group).where(
-                Group.invite_code == invite_code
-            )
-        )
+        existing_code = db.scalar(select(Group).where(Group.invite_code == invite_code))
 
         if not existing_code:
             break
 
-    group = Group(
-        name=data.name,
-        teacher_id=teacher.id,
-        invite_code=invite_code
-    )
+    group = Group(name=data.name, teacher_id=teacher.id, invite_code=invite_code)
 
     db.add(group)
     db.commit()
@@ -89,12 +69,14 @@ def create_group(
 
     return group
 
+
 # =========================================================
 # Получение списка групп
 #
 # teacher -> получает свои группы
 # student -> получает группы, в которых состоит
 # =========================================================
+
 
 @router.get(
     "",
@@ -110,9 +92,7 @@ def get_groups(
 
     if current_user.role == "teacher":
         groups = db.scalars(
-            select(Group).where(
-                Group.teacher_id == current_user.id
-            )
+            select(Group).where(Group.teacher_id == current_user.id)
         ).all()
 
         return groups
@@ -128,9 +108,7 @@ def get_groups(
                 GroupMember,
                 GroupMember.group_id == Group.id,
             )
-            .where(
-                GroupMember.student_id == current_user.id
-            )
+            .where(GroupMember.student_id == current_user.id)
         ).all()
 
         return groups
@@ -141,6 +119,7 @@ def get_groups(
 # =========================================================
 # Получение одной группы
 # =========================================================
+
 
 @router.get(
     "/{group_id}",
@@ -202,6 +181,7 @@ def get_group(
 # Добавление учащегося в группу
 # Только преподаватель
 # =========================================================
+
 
 @router.post(
     "/{group_id}/students",
@@ -287,6 +267,7 @@ def add_student(
 # Получение учащихся конкретной группы
 # =========================================================
 
+
 @router.get(
     "/{group_id}/students",
 )
@@ -339,15 +320,13 @@ def get_group_students(
         )
 
     # Получаем всех учащихся группы
-    students = db.scalars(
-        select(User)
+    students = db.execute(
+        select(User, GroupMember.is_leader)
         .join(
             GroupMember,
             GroupMember.student_id == User.id,
         )
-        .where(
-            GroupMember.group_id == group_id
-        )
+        .where(GroupMember.group_id == group_id)
         .order_by(User.name)
     ).all()
 
@@ -356,8 +335,9 @@ def get_group_students(
             "id": student.id,
             "name": student.name,
             "email": student.email,
+            "is_leader": is_leader,
         }
-        for student in students
+        for student, is_leader in students
     ]
 
 
@@ -365,6 +345,7 @@ def get_group_students(
 # Удаление учащегося из группы
 # Только преподаватель
 # =========================================================
+
 
 @router.delete(
     "/{group_id}/students/{student_id}",
@@ -416,6 +397,7 @@ def remove_student(
 # Только преподаватель
 # =========================================================
 
+
 @router.delete(
     "/{group_id}",
 )
@@ -451,53 +433,35 @@ def delete_group(
 def join_group(
     data: JoinGroupRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     if current_user.role != "student":
         raise HTTPException(
-            status_code=403,
-            detail="Только учащийся может вступить в группу"
+            status_code=403, detail="Только учащийся может вступить в группу"
         )
 
     code = data.invite_code.strip().upper()
 
-    group = db.scalar(
-        select(Group).where(
-            Group.invite_code == code
-        )
-    )
+    group = db.scalar(select(Group).where(Group.invite_code == code))
 
     if not group:
-        raise HTTPException(
-            status_code=404,
-            detail="Неверный код группы"
-        )
+        raise HTTPException(status_code=404, detail="Неверный код группы")
 
     existing_member = db.scalar(
         select(GroupMember).where(
-            GroupMember.group_id == group.id,
-            GroupMember.student_id == current_user.id
+            GroupMember.group_id == group.id, GroupMember.student_id == current_user.id
         )
     )
 
     if existing_member:
-        raise HTTPException(
-            status_code=400,
-            detail="Вы уже состоите в этой группе"
-        )
+        raise HTTPException(status_code=400, detail="Вы уже состоите в этой группе")
 
-    member = GroupMember(
-        group_id=group.id,
-        student_id=current_user.id
-    )
+    member = GroupMember(group_id=group.id, student_id=current_user.id)
 
     db.add(member)
     db.commit()
 
     return {
         "message": "Вы успешно вступили в группу",
-        "group": {
-            "id": group.id,
-            "name": group.name
-        }
+        "group": {"id": group.id, "name": group.name},
     }

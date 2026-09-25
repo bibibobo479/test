@@ -43,9 +43,7 @@ class SubtaskResponse(BaseModel):
 
     created_at: datetime
 
-    model_config = ConfigDict(
-        from_attributes=True
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SubtaskStatusUpdate(BaseModel):
@@ -63,6 +61,7 @@ class SubtaskStatusUpdate(BaseModel):
         max_length=500,
     )
 
+
 class SubtaskUpdate(BaseModel):
     title: str | None = Field(
         default=None,
@@ -74,8 +73,11 @@ class SubtaskUpdate(BaseModel):
 
     deadline: datetime | None = None
 
-    priority: Literal[
-        "low",
-        "normal",
-        "high",
-    ] | None = None
+    priority: (
+        Literal[
+            "low",
+            "normal",
+            "high",
+        ]
+        | None
+    ) = None
